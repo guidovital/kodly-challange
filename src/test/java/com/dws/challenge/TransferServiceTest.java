@@ -43,7 +43,7 @@ public class TransferServiceTest {
         when(accountsService.getAccount(accountToId)).thenReturn(accountTo);
 
         BigDecimal amount = new BigDecimal("30");
-        transferService.transferMoney(accountFromId, accountToId, amount);
+        transferService.processTransferRequest(accountFromId, accountToId, amount);
 
         assertEquals(new BigDecimal("70"), accountFrom.getBalance());
         assertEquals(new BigDecimal("80"), accountTo.getBalance());
@@ -62,7 +62,7 @@ public class TransferServiceTest {
         when(accountsService.getAccount(accountIdTo)).thenReturn(accountTo);
 
         InsufficientFundsException exception = assertThrows(InsufficientFundsException.class, () ->
-                transferService.transferMoney(accountIdFrom, accountIdTo, new BigDecimal("30")));
+                transferService.processTransferRequest(accountIdFrom, accountIdTo, new BigDecimal("30")));
 
         assertEquals(new BigDecimal("20"), accountFrom.getBalance());
         assertEquals(new BigDecimal("50"), accountTo.getBalance());
@@ -79,7 +79,7 @@ public class TransferServiceTest {
         when(accountsService.getAccount(accountIdFrom)).thenReturn(null);
 
         InvalidAccountException exception = assertThrows(InvalidAccountException.class, () -> {
-            transferService.transferMoney(accountIdFrom, accountIdTo, new BigDecimal("30"));
+            transferService.processTransferRequest(accountIdFrom, accountIdTo, new BigDecimal("30"));
         });
 
         assertEquals("Invalid account from ID", exception.getMessage());
@@ -97,7 +97,7 @@ public class TransferServiceTest {
         when(accountsService.getAccount(accountIdTo)).thenReturn(null);
 
         InvalidAccountException exception = assertThrows(InvalidAccountException.class, () -> {
-            transferService.transferMoney(accountIdFrom, accountIdTo, new BigDecimal("30"));
+            transferService.processTransferRequest(accountIdFrom, accountIdTo, new BigDecimal("30"));
         });
 
         assertEquals("Invalid account to ID", exception.getMessage());
@@ -117,7 +117,7 @@ public class TransferServiceTest {
         when(accountsService.getAccount(accountIdTo)).thenReturn(accountTo);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            transferService.transferMoney(accountIdFrom, accountIdTo, new BigDecimal(-30));
+            transferService.processTransferRequest(accountIdFrom, accountIdTo, new BigDecimal(-30));
         });
 
         assertEquals("Amount can not be negative.", exception.getMessage());
