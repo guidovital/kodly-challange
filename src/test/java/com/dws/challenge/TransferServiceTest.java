@@ -56,16 +56,31 @@ public class TransferServiceTest {
         String accountIdFrom = "1";
         String accountIdTo = "2";
         Account accountFrom = new Account(accountIdFrom, new BigDecimal("20"));
-        Account accountTo = new Account(accountIdTo, new BigDecimal("50"));
 
         when(accountsService.getAccount(accountIdFrom)).thenReturn(accountFrom);
-        when(accountsService.getAccount(accountIdTo)).thenReturn(accountTo);
 
         InsufficientFundsException exception = assertThrows(InsufficientFundsException.class, () ->
                 transferService.processTransferRequest(accountIdFrom, accountIdTo, new BigDecimal("30")));
 
         assertEquals(new BigDecimal("20"), accountFrom.getBalance());
-        assertEquals(new BigDecimal("50"), accountTo.getBalance());
+        assertEquals("There's no money enough.", exception.getMessage());
+
+        // No notification should be sent
+        verifyNoInteractions(notificationService);
+    }
+
+    @Test
+    public void testTransferWithZeroFunds() {
+        String accountIdFrom = "1";
+        String accountIdTo = "2";
+        Account accountFrom = new Account(accountIdFrom, new BigDecimal("0"));
+
+        when(accountsService.getAccount(accountIdFrom)).thenReturn(accountFrom);
+
+        InsufficientFundsException exception = assertThrows(InsufficientFundsException.class, () ->
+                transferService.processTransferRequest(accountIdFrom, accountIdTo, new BigDecimal("0")));
+
+        assertEquals(new BigDecimal("0"), accountFrom.getBalance());
         assertEquals("There's no money enough.", exception.getMessage());
 
         // No notification should be sent
@@ -92,7 +107,7 @@ public class TransferServiceTest {
     public void testTransferWithInvalidAccountTo() {
         String accountIdFrom = "1";
         String accountIdTo = "2";
-        Account accountFrom = new Account(accountIdFrom, new BigDecimal("20"));
+        Account accountFrom = new Account(accountIdFrom, new BigDecimal("200"));
         when(accountsService.getAccount(accountIdFrom)).thenReturn(accountFrom);
         when(accountsService.getAccount(accountIdTo)).thenReturn(null);
 
@@ -110,11 +125,6 @@ public class TransferServiceTest {
     public void testTransferWithNegativeAmount() {
         String accountIdFrom = "1";
         String accountIdTo = "2";
-        Account accountFrom = new Account(accountIdFrom, new BigDecimal("100"));
-        Account accountTo = new Account(accountIdTo, new BigDecimal("50"));
-
-        when(accountsService.getAccount(accountIdFrom)).thenReturn(accountFrom);
-        when(accountsService.getAccount(accountIdTo)).thenReturn(accountTo);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             transferService.processTransferRequest(accountIdFrom, accountIdTo, new BigDecimal(-30));
@@ -122,5 +132,17 @@ public class TransferServiceTest {
 
         assertEquals("Amount can not be negative.", exception.getMessage());
     }
+
+    @Test
+    public void testTransferBetweenSameAccount() {
+        String accountId = "1";
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            transferService.processTransferRequest(accountId, accountId, new BigDecimal(30));
+        });
+
+        assertEquals("The accounts have to be different.", exception.getMessage());
+    }
+
 }
 
